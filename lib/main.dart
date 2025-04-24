@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:we_chat/firebase_options.dart';
 import 'package:we_chat/screens/auth_screen.dart';
+import 'package:we_chat/screens/chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +24,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 118, 99, 78)),
       ),
-      home: AuthScreen(),
+      // A Better option for continuous check & can allow for check with login activity
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData){
+            return ChatScreen();
+          }
+          return AuthScreen();
+        }
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
