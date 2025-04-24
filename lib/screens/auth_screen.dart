@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:we_chat/widgets/user_image_picker_widget.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -10,7 +11,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
-  var _isLogin = true;
+  var _isLogin = false;
   var _enteredEmail = '';
   var _enteredPassword = '';
 
@@ -26,10 +27,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
     if(_isLogin){
       try{
-        final loginCredentials = await firebase.signInWithEmailAndPassword(
+        await firebase.signInWithEmailAndPassword(
           email: _enteredEmail, 
           password: _enteredPassword);
-          print(loginCredentials);
       }
       on FirebaseAuthException catch(err){
         if(!mounted) return;
@@ -40,10 +40,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
     else{
       try{
-      final userCredentials = await firebase.createUserWithEmailAndPassword(
+      await firebase.createUserWithEmailAndPassword(
         email: _enteredEmail , 
         password: _enteredPassword);
-        print(userCredentials);
     }on FirebaseAuthException catch(err) {
       if(!mounted) return;
 
@@ -85,6 +84,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (!_isLogin)
+                        UserImagePickerWidget(),
                         TextFormField(
                           decoration: InputDecoration(
                             labelText: "Email Address",
