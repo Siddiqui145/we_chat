@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:we_chat/widgets/user_image_picker_widget.dart';
 
@@ -14,15 +17,17 @@ class _AuthScreenState extends State<AuthScreen> {
   var _isLogin = false;
   var _enteredEmail = '';
   var _enteredPassword = '';
+  File? _selectedImage; //For storing & using the passed picked File
 
   final firebase = FirebaseAuth.instance;
 
   void _submit() async {
     final isValid = _formKey.currentState!.validate();
 
-    if (!isValid){
+    if (!isValid || !_isLogin && _selectedImage == null){
       return;
     }
+
     _formKey.currentState!.save();
 
     if(_isLogin){
@@ -40,10 +45,16 @@ class _AuthScreenState extends State<AuthScreen> {
 
     else{
       try{
-      await firebase.createUserWithEmailAndPassword(
+      final userCredentials = await firebase.createUserWithEmailAndPassword(
         email: _enteredEmail , 
         password: _enteredPassword);
-    }on FirebaseAuthException catch(err) {
+
+        //child child would just create folder inside folder, using ref
+        final storageRef = FirebaseStorage.instance.ref().child("User_Images").child("${userCredentials.user!.uid}.jpg");
+
+        await storageRef.putFile(_selectedImage!);    //putFile actually saves our image
+        final imageUrl = await storageRef.getDownloadURL();
+    } on FirebaseAuthException catch(err) {
       if(!mounted) return;
 
       if (err.code == "email-already-in-use"){
@@ -85,7 +96,11 @@ class _AuthScreenState extends State<AuthScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (!_isLogin)
-                        UserImagePickerWidget(),
+                        UserImagePickerWidget(
+                          onPickImage: (pickedImage) {
+                            _selectedImage = pickedImage;
+                          },
+                        ),
                         TextFormField(
                           decoration: InputDecoration(
                             labelText: "Email Address",

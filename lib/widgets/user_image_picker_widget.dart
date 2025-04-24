@@ -4,7 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class UserImagePickerWidget extends StatefulWidget {
-  const UserImagePickerWidget({super.key});
+  const UserImagePickerWidget({
+    super.key,
+    required this.onPickImage
+    });
+
+  final void Function(File pickedImage) onPickImage;
 
   @override
   State<UserImagePickerWidget> createState() => _UserImagePickerWidgetState();
@@ -28,6 +33,8 @@ class _UserImagePickerWidgetState extends State<UserImagePickerWidget> {
       setState(() {
         _pickedImageFile = File(pickedImage.path);  // using File package to convert our image into a type file
       });
+
+      widget.onPickImage(_pickedImageFile!); // Passing our preview image to the auth screen now
   }
 
   @override
