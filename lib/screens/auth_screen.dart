@@ -14,10 +14,11 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
-  var _isLogin = false;
+  var _isLogin = true;
   var _enteredEmail = '';
   var _enteredPassword = '';
   File? _selectedImage; //For storing & using the passed picked File
+  var _isAuthenticating = false;
 
   final firebase = FirebaseAuth.instance;
 
@@ -31,7 +32,11 @@ class _AuthScreenState extends State<AuthScreen> {
     _formKey.currentState!.save();
 
     if(_isLogin){
+
       try{
+        setState(() {
+          _isAuthenticating = true;
+        });
         await firebase.signInWithEmailAndPassword(
           email: _enteredEmail, 
           password: _enteredPassword);
@@ -40,11 +45,18 @@ class _AuthScreenState extends State<AuthScreen> {
         if(!mounted) return;
         ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err.message ?? "Failed Logging in User!")));
+
+        setState(() {
+      _isAuthenticating = false;
+    });
       }
     }
 
     else{
       try{
+        setState(() {
+          _isAuthenticating = true;
+        });
       final userCredentials = await firebase.createUserWithEmailAndPassword(
         email: _enteredEmail , 
         password: _enteredPassword);
@@ -62,6 +74,10 @@ class _AuthScreenState extends State<AuthScreen> {
       }
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err.message ?? "Authentication Failed!")));
+
+      setState(() {
+      _isAuthenticating = false;
+    });
     }
     }      
   }
@@ -139,12 +155,19 @@ class _AuthScreenState extends State<AuthScreen> {
                         const SizedBox(
                           height: 12,
                         ),
+
+                        if (_isAuthenticating) CircularProgressIndicator(),
+                        
+                        if(!_isAuthenticating)
                         ElevatedButton(onPressed: _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.primaryContainer
                         ),
                          child: Text(_isLogin ? 'Login' : 'Signup')),
 
+                        if (_isAuthenticating) CircularProgressIndicator(),
+
+                        if(!_isAuthenticating)
                         TextButton(onPressed: () {
                           setState(() {
                             _isLogin = !_isLogin;
