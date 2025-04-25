@@ -17,7 +17,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final fcm = FirebaseMessaging.instance;
 
     await fcm.requestPermission();  //final notificationSettings has various options further
-    await fcm.getToken();
+    
+    fcm.subscribeToTopic("chat"); // on this specific topic user will always receive noti
+    
+    //await fcm.getToken();
     //final token =     print(token); 
   }
 
