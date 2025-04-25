@@ -21,6 +21,7 @@ class _AuthScreenState extends State<AuthScreen> {
   var _enteredPassword = '';
   File? _selectedImage; //For storing & using the passed picked File
   var _isAuthenticating = false;
+  var _enteredName = '';
 
   final firebase = FirebaseAuth.instance;
 
@@ -94,7 +95,7 @@ class _AuthScreenState extends State<AuthScreen> {
     "email": _enteredEmail,
     "image_url": imageUrl,
     "uid": uid,
-    "username": "abc",
+    "username": _enteredName,
   });
 } on FirebaseAuthException catch (err) {
   if (!mounted) return;
@@ -144,6 +145,23 @@ class _AuthScreenState extends State<AuthScreen> {
                         UserImagePickerWidget(
                           onPickImage: (pickedImage) {
                             _selectedImage = pickedImage;
+                          },
+                        ),
+                        if (!_isLogin)
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: "User Name",
+                          ),
+                          enableSuggestions: false,
+                          keyboardType: TextInputType.name,
+                          validator: (value) {
+                            if (value == null || value.isEmpty || value.trim().length < 4){
+                              return 'Please enter a valid User Name';
+                            }
+                            return null;
+                          },
+                          onSaved: (newValue) {
+                            _enteredName = newValue!;
                           },
                         ),
                         TextFormField(
