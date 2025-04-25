@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:we_chat/widgets/user_image_picker_widget.dart';
 
@@ -53,33 +55,60 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     else{
-      try{
-        setState(() {
-          _isAuthenticating = true;
-        });
-      final userCredentials = await firebase.createUserWithEmailAndPassword(
-        email: _enteredEmail , 
-        password: _enteredPassword);
+      try {
+  setState(() {
+    _isAuthenticating = true;
+  });
 
-        //child child would just create folder inside folder, using ref
-        final storageRef = FirebaseStorage.instance.ref().child("User_Images").child("${userCredentials.user!.uid}.jpg");
+  final userCredentials = await firebase.createUserWithEmailAndPassword(
+    email: _enteredEmail,
+    password: _enteredPassword,
+  );
 
-        await storageRef.putFile(_selectedImage!);    //putFile actually saves our image
-        final imageUrl = await storageRef.getDownloadURL();
-    } on FirebaseAuthException catch(err) {
-      if(!mounted) return;
+  //child child would just create folder inside folder, using ref
+  final storageRef = FirebaseStorage.instance
+      .ref()
+      .child("User_Images")
+      .child("${userCredentials.user!.uid}.jpg");
 
-      if (err.code == "email-already-in-use"){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err.message ?? "Email Already in use!")));
-      }
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err.message ?? "Authentication Failed!")));
+  // Try-catch around upload & getDownloadURL
+  late final String imageUrl;  //putFile actually saves our image
+  try {
+    final uploadTask = await storageRef.putFile(_selectedImage!);
+    imageUrl = await uploadTask.ref.getDownloadURL();
+  } catch (e) {
+    if (kDebugMode) print("Image upload failed: $e");
 
-      setState(() {
+    if(!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Image upload failed: $e")),
+    );
+    setState(() {
       _isAuthenticating = false;
     });
+    return;
+  }
+
+  final uid = userCredentials.user!.uid;
+  await FirebaseFirestore.instance.collection("users").doc(uid).set({
+    "email": _enteredEmail,
+    "image_url": imageUrl,
+    "uid": uid,
+    "username": "abc",
+  });
+} on FirebaseAuthException catch (err) {
+  if (!mounted) return;
+
+  ScaffoldMessenger.of(context).clearSnackBars();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(err.message ?? "Authentication Failed!")),
+  );
+
+  setState(() {
+    _isAuthenticating = false;
+  });
+}
     }
-    }      
   }
 
   @override
